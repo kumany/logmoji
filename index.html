@@ -11,6 +11,7 @@
       font-family: 'Hiragino Sans', 'Segoe UI', sans-serif;
       color: #333;
     }
+
     .container {
       max-width: 600px;
       margin: 2rem auto;
@@ -19,18 +20,21 @@
       border-radius: 8px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
+
     h1 {
       text-align: center;
       font-weight: normal;
       color: #555;
       margin-bottom: 1.5rem;
     }
+
     .controls {
       display: flex;
       gap: 1rem;
       justify-content: center;
       margin-bottom: 1.5rem;
     }
+
     button, select {
       padding: 0.6rem 1rem;
       border: none;
@@ -40,14 +44,17 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       transition: 0.2s ease-in-out;
     }
+
     button:hover, select:hover {
       transform: translateY(-2px);
       box-shadow: 0 4px 10px rgba(0,0,0,0.15);
     }
+
     button:disabled {
       opacity: 0.5;
       cursor: not-allowed;
     }
+
     #log {
       list-style: none;
       padding: 0;
@@ -56,21 +63,15 @@
       overflow-y: auto;
       border-top: 1px solid #eee;
     }
+
     #log li {
       padding: 0.7rem 0;
       border-bottom: 1px solid #eee;
       transition: background-color 0.2s;
     }
+
     #log li:hover {
       background-color: #f4f4f4;
-    }
-    #statusMsg {
-      text-align: center;
-      margin-top: 1.5rem;
-      color: #988;
-      font-size: 1.1rem;
-      min-height: 2.5em;
-      transition: opacity 0.3s;
     }
   </style>
 </head>
@@ -90,11 +91,9 @@
   </div>
 
   <ul id="log"></ul>
-  <div id="statusMsg"></div>
 </div>
 
 <script>
-  // のだ調で楽しく説明するのだ！
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) {
     alert('Web Speech APIに対応していないのだ。Chromeを使ってほしいのだ！');
@@ -108,72 +107,34 @@
     const stopBtn = document.getElementById('stopBtn');
     const languageSelect = document.getElementById('language');
     const logArea = document.getElementById('log');
-    const statusMsg = document.getElementById('statusMsg');
 
     let isContinuous = false; //継続フラグをセットするのだ。
     let recognitionTimer;
-    let statusInterval;
-    let statusPhase = 0;
 
     function resetRecognitionTimer() {
       clearTimeout(recognitionTimer);
       recognitionTimer = setTimeout(() => {
         recognition.stop();
-        showStatusMsg('長時間操作がなかったから止めたのだ。再開してほしいのだ。');
+        alert('長時間操作がなかったから止めたのだ。再開してほしいのだ。');
       }, 3600000); //1時間で自動停止なのだ。
     }
-
-    function showStatusMsg(msg) {
-      statusMsg.textContent = msg;
-      statusMsg.style.opacity = 1;
-    }
-    function hideStatusMsg() {
-      statusMsg.style.opacity = 0;
-      statusMsg.textContent = '';
-    }
-
-    // 停止中は一定間隔でメッセージ表示するのだ
-    function startStatusInterval() {
-      clearInterval(statusInterval);
-      statusPhase = 0;
-      showStatusMsg('ただいま音声認識は停止中なのだ');
-      statusInterval = setInterval(() => {
-        const msgs = [
-          'ただいま音声認識は停止中なのだ',
-          'マイクボタンを押して始めてほしいのだ',
-          '準備ができたらいつでもスタートできるのだ'
-        ];
-        showStatusMsg(msgs[statusPhase % msgs.length]);
-        statusPhase++;
-      }, 20000); //20秒ごとに切り替えなのだ
-    }
-    function stopStatusInterval() {
-      clearInterval(statusInterval);
-      hideStatusMsg();
-    }
-
-    // ページ読み込み時にまず停止中メッセージを出しておくのだ
-    startStatusInterval();
 
     startBtn.onclick = () => {
       recognition.lang = languageSelect.value;
       isContinuous = true;
       recognition.start();
       resetRecognitionTimer();
-      stopStatusInterval(); //メッセージを消すのだ
     };
 
     stopBtn.onclick = () => {
       isContinuous = false;
       recognition.stop();
       clearTimeout(recognitionTimer);
-      startStatusInterval();
     };
 
     recognition.onstart = () => {
       startBtn.disabled = true;
       stopBtn.disabled = false;
-      stopStatusInterval(); //認識中は停止中メッセージを消すのだ
     };
 
     recognition.onend = () => {
@@ -182,14 +143,11 @@
       if (isContinuous) {
         recognition.start();
         resetRecognitionTimer();
-        stopStatusInterval();
-      } else {
-        startStatusInterval();
       }
     };
 
     recognition.onresult = (event) => {
-      resetRecognitionTimer();
+      resetRecognitionTimer(); // 結果が出るたびにタイマーをリセットなのだ。
       for (let i = event.resultIndex; i < event.results.length; i++) {
         if (event.results[i].isFinal) {
           const transcript = event.results[i][0].transcript;
