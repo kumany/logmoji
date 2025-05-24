@@ -2,8 +2,9 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>音声認識ログ</title>
+  <title>シンプルでスマートな音声認識ログ</title>
   <style>
+    /* ページ全体の簡易スタイル */
     body {
       margin: 0;
       padding: 0;
@@ -13,12 +14,12 @@
     }
 
     .container {
-      max-width: 600px;
+      max-width: 600px; 
       margin: 2rem auto;
       padding: 1rem;
-      background: #fff;
+      background-color: #fff;
       border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
     }
 
     h1 {
@@ -28,13 +29,13 @@
       margin-bottom: 1.5rem;
     }
 
+    /* 操作ボタン類 */
     .controls {
       display: flex;
       gap: 1rem;
       justify-content: center;
       margin-bottom: 1.5rem;
     }
-
     button, select {
       padding: 0.6rem 1rem;
       border: none;
@@ -44,35 +45,35 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       transition: 0.2s ease-in-out;
     }
-
     button:hover, select:hover {
       transform: translateY(-2px);
       box-shadow: 0 4px 10px rgba(0,0,0,0.15);
     }
-
     button:disabled {
       opacity: 0.5;
       cursor: not-allowed;
     }
 
+    /* ログ一覧 */
     #log {
       list-style: none;
       padding: 0;
       margin: 0;
-      max-height: 450px;
-      overflow-y: auto;
       border-top: 1px solid #eee;
+      max-height: 450px;    /* 高さを1.5倍程度に拡大 */
+      overflow-y: auto;     /* スクロール可能に */
+      font-size: 1rem;
     }
-
     #log li {
-      padding: 0.7rem 0;
       border-bottom: 1px solid #eee;
+      padding: 0.7rem 0;
+      line-height: 1.4;
       transition: background-color 0.2s;
     }
-
     #log li:hover {
       background-color: #f4f4f4;
     }
+
   </style>
 </head>
 <body>
@@ -80,6 +81,7 @@
 <div class="container">
   <h1>音声認識ログ</h1>
 
+  <!-- 操作パネル -->
   <div class="controls">
     <select id="language">
       <option value="ja-JP">日本語</option>
@@ -90,47 +92,50 @@
     <button id="stopBtn" disabled>音声認識を停止</button>
   </div>
 
+  <!-- ログを表示するエリア -->
   <ul id="log"></ul>
 </div>
 
 <script>
+  //=========================================
+  // Web Speech API が使えるか確認
+  //=========================================
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) {
-    alert('Web Speech APIに対応していないのだ。Chromeを使ってほしいのだ！');
+    alert('このブラウザは Web Speech API をサポートしていません。Chrome などでお試しください。');
   } else {
+    //=========================================
+    // インスタンスの準備
+    //=========================================
     const recognition = new SpeechRecognition();
-    recognition.continuous = true; //ずっと認識し続けるのだ。
-    recognition.interimResults = false; //途中の結果はいらないのだ。
-    recognition.maxAlternatives = 1; //ベストな結果を1つだけなのだ。
+    recognition.continuous = true;        // 連続認識
+    recognition.interimResults = false;   // 中間結果は取得しない
+    recognition.maxAlternatives = 1;
 
+    //=========================================
+    // HTML要素を参照
+    //=========================================
     const startBtn = document.getElementById('startBtn');
-    const stopBtn = document.getElementById('stopBtn');
+    const stopBtn  = document.getElementById('stopBtn');
     const languageSelect = document.getElementById('language');
-    const logArea = document.getElementById('log');
+    const logArea  = document.getElementById('log');
 
-    let isContinuous = false; //継続フラグをセットするのだ。
-    let recognitionTimer;
+    // 「止まらないように」フラグ
+    let isContinuous = false;
 
-    function resetRecognitionTimer() {
-      clearTimeout(recognitionTimer);
-      recognitionTimer = setTimeout(() => {
-        recognition.stop();
-        alert('長時間操作がなかったから止めたのだ。再開してほしいのだ。');
-      }, 3600000); //1時間で自動停止なのだ。
-    }
-
-    startBtn.onclick = () => {
+    //=========================================
+    // イベント設定
+    //=========================================
+    startBtn.addEventListener('click', () => {
       recognition.lang = languageSelect.value;
       isContinuous = true;
       recognition.start();
-      resetRecognitionTimer();
-    };
+    });
 
-    stopBtn.onclick = () => {
+    stopBtn.addEventListener('click', () => {
       isContinuous = false;
       recognition.stop();
-      clearTimeout(recognitionTimer);
-    };
+    });
 
     recognition.onstart = () => {
       startBtn.disabled = true;
@@ -140,26 +145,32 @@
     recognition.onend = () => {
       startBtn.disabled = false;
       stopBtn.disabled = true;
+      // もし連続を続けたい場合は再起動
       if (isContinuous) {
         recognition.start();
-        resetRecognitionTimer();
       }
     };
 
     recognition.onresult = (event) => {
-      resetRecognitionTimer(); // 結果が出るたびにタイマーをリセットなのだ。
       for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
-          const transcript = event.results[i][0].transcript;
+          // 確定結果をログに追加（上に追加）
           const li = document.createElement('li');
           li.textContent = transcript;
-          logArea.insertBefore(li, logArea.firstChild);
+
+          // 新しいログを最上部に追加
+          if (logArea.firstChild) {
+            logArea.insertBefore(li, logArea.firstChild);
+          } else {
+            logArea.appendChild(li);
+          }
         }
       }
     };
 
     recognition.onerror = (event) => {
-      console.error('認識エラーなのだ:', event.error);
+      console.error('認識エラー:', event.error);
     };
   }
 </script>
